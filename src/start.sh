@@ -194,34 +194,33 @@ download_model() {
 }
 
 
-download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_bf16.safetensors" "$DIFFUSION_MODELS_DIR/qwen_image_bf16.safetensors"
-download_model "https://huggingface.co/Comfy-Org/Qwen-Image-Edit_ComfyUI/resolve/main/split_files/diffusion_models/qwen_image_edit_2509_bf16.safetensors" "$DIFFUSION_MODELS_DIR/qwen_image_edit_2509_bf16.safetensors"
-download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b.safetensors" "$TEXT_ENCODERS_DIR/qwen_2.5_vl_7b.safetensors"
-download_model "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors" "$VAE_DIR/qwen_image_vae.safetensors"
-download_model "https://huggingface.co/spacepxl/Wan2.1-VAE-upscale2x/resolve/main/Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors" "$VAE_DIR/Wan2.1_VAE_upscale2x_imageonly_real_v1.safetensors"
-download_model "https://huggingface.co/lightx2v/Qwen-Image-Lightning/resolve/main/Qwen-Image-Lightning-8steps-V1.1.safetensors" "$LORAS_DIR/Qwen-Image-Lightning-8steps-V1.1.safetensors"
-download_model "https://huggingface.co/DiffSynth-Studio/Z-Image-Turbo-DistillPatch/resolve/main/model.safetensors" "$LORAS_DIR/z_image_turbo_distillpatch.safetensors"
+# Download LTX-2 Main Model
+download_model "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-19b-dev.safetensors" "$DIFFUSION_MODELS_DIR/ltx-2-19b-dev.safetensors"
+
+# Download LTX-2 Upscalers
+download_model "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-spatial-upscaler-x2-1.0.safetensors" "$UPSCALE_MODELS_DIR/ltx-2-spatial-upscaler-x2-1.0.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-temporal-upscaler-x2-1.0.safetensors" "$UPSCALE_MODELS_DIR/ltx-2-temporal-upscaler-x2-1.0.safetensors"
+
+# Download LTX-2 Distilled LoRA
+download_model "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-19b-distilled-lora-384.safetensors" "$LORAS_DIR/ltx-2-19b-distilled-lora-384.safetensors"
+
+# Download LTX-2 Control LoRAs - Image Control
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Canny-Control/resolve/main/ltx-2-19b-ic-lora-canny-control.safetensors" "$LORAS_DIR/ltx-2-19b-ic-lora-canny-control.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Depth-Control/resolve/main/ltx-2-19b-ic-lora-depth-control.safetensors" "$LORAS_DIR/ltx-2-19b-ic-lora-depth-control.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Detailer/resolve/main/ltx-2-19b-ic-lora-detailer.safetensors" "$LORAS_DIR/ltx-2-19b-ic-lora-detailer.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Pose-Control/resolve/main/ltx-2-19b-ic-lora-pose-control.safetensors" "$LORAS_DIR/ltx-2-19b-ic-lora-pose-control.safetensors"
+
+# Download LTX-2 Control LoRAs - Camera Control
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-LoRA-Camera-Control-Dolly-In/resolve/main/ltx-2-19b-lora-camera-control-dolly-in.safetensors" "$LORAS_DIR/ltx-2-19b-lora-camera-control-dolly-in.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-LoRA-Camera-Control-Dolly-Left/resolve/main/ltx-2-19b-lora-camera-control-dolly-left.safetensors" "$LORAS_DIR/ltx-2-19b-lora-camera-control-dolly-left.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-LoRA-Camera-Control-Dolly-Out/resolve/main/ltx-2-19b-lora-camera-control-dolly-out.safetensors" "$LORAS_DIR/ltx-2-19b-lora-camera-control-dolly-out.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-LoRA-Camera-Control-Dolly-Right/resolve/main/ltx-2-19b-lora-camera-control-dolly-right.safetensors" "$LORAS_DIR/ltx-2-19b-lora-camera-control-dolly-right.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-LoRA-Camera-Control-Jib-Down/resolve/main/ltx-2-19b-lora-camera-control-jib-down.safetensors" "$LORAS_DIR/ltx-2-19b-lora-camera-control-jib-down.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-LoRA-Camera-Control-Jib-Up/resolve/main/ltx-2-19b-lora-camera-control-jib-up.safetensors" "$LORAS_DIR/ltx-2-19b-lora-camera-control-jib-up.safetensors"
+download_model "https://huggingface.co/Lightricks/LTX-2-19b-LoRA-Camera-Control-Static/resolve/main/ltx-2-19b-lora-camera-control-static.safetensors" "$LORAS_DIR/ltx-2-19b-lora-camera-control-static.safetensors"
+
+# Download general-purpose upscaler
 download_model "https://objectstorage.us-phoenix-1.oraclecloud.com/n/ax6ygfvpvzka/b/open-modeldb-files/o/1x-ITF-SkinDiffDetail-Lite-v1.pth" "$UPSCALE_MODELS_DIR/1x-ITF-SkinDiffDetail-Lite-v1.pth"
-
-# Download z_image models if download_z_image is set to true
-if [ "$download_z_image" = "true" ]; then
-    echo "📥 download_z_image is set to true. Downloading z_image models..."
-    download_model "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors" "$DIFFUSION_MODELS_DIR/z_image_turbo_bf16.safetensors"
-    download_model "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors" "$TEXT_ENCODERS_DIR/qwen_3_4b.safetensors"
-    download_model "https://huggingface.co/modelzpalace/ae.safetensors/resolve/main/ae.safetensors" "$VAE_DIR/ae.safetensors"
-    echo "✅ z_image model downloads scheduled"
-else
-    echo "⏭️  download_z_image is not set to true. Skipping z_image model downloads."
-fi
-
-# Download MultiAngle.safetensors to LORAS_DIR using wget
-mkdir -p "$LORAS_DIR"
-if [ ! -f "$LORAS_DIR/MultiAngle.safetensors" ]; then
-    echo "📥 Downloading MultiAngle.safetensors to $LORAS_DIR..."
-    wget -O "$LORAS_DIR/MultiAngle.safetensors" "https://huggingface.co/Hearmeman/MultiAngleQwen/resolve/main/MultiAngle.safetensors"
-else
-    echo "✅ MultiAngle.safetensors already exists, skipping download."
-fi
 
 # Download additional models
 echo "📥 Starting additional model downloads..."
