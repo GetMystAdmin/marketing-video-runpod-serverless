@@ -110,7 +110,7 @@ WORKDIR /
 
 # Copy handler code
 COPY src/handler.py /handler.py
-COPY src/comfy_api.py /opt/venv/lib/python3.11/site-packages/comfy_api.py
+COPY src/comfy_bridge.py /opt/venv/lib/python3.11/site-packages/comfy_bridge.py
 COPY workflows/ /workflows/
 COPY src/extra_model_paths.yaml /extra_model_paths.yaml
 
@@ -121,7 +121,7 @@ ENV NETWORK_VOLUME=/runpod-volume \
     EXTRA_MODEL_PATHS=/extra_model_paths.yaml
 
 # Create necessary directories
-RUN mkdir -p /workspace/ComfyUI/output /workspace/ComfyUI/input
+RUN mkdir -p /workspace/output /workspace/input
 
 # Entry point
 CMD ["python3", "-u", "/handler.py"]
@@ -135,21 +135,21 @@ WORKDIR /
 
 # Copy handler code
 COPY src/handler.py /handler.py
-COPY src/comfy_api.py /opt/venv/lib/python3.11/site-packages/comfy_api.py
+COPY src/comfy_bridge.py /opt/venv/lib/python3.11/site-packages/comfy_bridge.py
 COPY workflows/ /workflows/
 COPY src/extra_model_paths.yaml /extra_model_paths.yaml
 
 # Environment for baked models mode
-ENV COMFY_OUTPUT_DIR=/workspace/ComfyUI/output \
-    COMFY_INPUT_DIR=/workspace/ComfyUI/input \
+ENV COMFY_OUTPUT_DIR=/workspace/output \
+    COMFY_INPUT_DIR=/workspace/input \
     EXTRA_MODEL_PATHS=/extra_model_paths.yaml \
     LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libtcmalloc.so.4
 
 # Create necessary directories
-RUN mkdir -p /workspace/ComfyUI/output /workspace/ComfyUI/input
+RUN mkdir -p /workspace/output /workspace/input
 
 # Download models directly (no separate stage, no copy = no duplication)
-WORKDIR /workspace/ComfyUI/models
+WORKDIR /workspace/models
 
 RUN mkdir -p checkpoints && \
     aria2c -x 16 -s 16 --console-log-level=warn \

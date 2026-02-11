@@ -24,7 +24,7 @@ from typing import Any
 
 import runpod
 
-from comfy_api import (
+from comfy_bridge import (
     ComfyClient,
     ComfyAPIError,
     extract_output_files,
@@ -42,8 +42,8 @@ logger = logging.getLogger("handler")
 # Configuration
 COMFY_HOST = os.getenv("COMFY_HOST", "127.0.0.1")
 COMFY_PORT = int(os.getenv("COMFY_PORT", "8188"))
-COMFY_OUTPUT_DIR = os.getenv("COMFY_OUTPUT_DIR", "/workspace/ComfyUI/output")
-COMFY_INPUT_DIR = os.getenv("COMFY_INPUT_DIR", "/workspace/ComfyUI/input")
+COMFY_OUTPUT_DIR = os.getenv("COMFY_OUTPUT_DIR", "/workspace/output")
+COMFY_INPUT_DIR = os.getenv("COMFY_INPUT_DIR", "/workspace/input")
 WORKFLOW_DIR = os.getenv("WORKFLOW_DIR", "/workflows")
 STARTUP_TIMEOUT = int(os.getenv("STARTUP_TIMEOUT", "300"))
 
@@ -127,7 +127,7 @@ def start_comfyui() -> bool:
 
     # Build command
     comfy_cmd = [
-        "python3", "/workspace/ComfyUI/main.py",
+        "python3", "/workspace/main.py",
         "--listen", COMFY_HOST,
         "--port", str(COMFY_PORT),
         "--disable-auto-launch",

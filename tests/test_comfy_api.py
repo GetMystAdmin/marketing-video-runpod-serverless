@@ -11,7 +11,7 @@ import os
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from comfy_api import (
+from comfy_bridge import (
     ComfyClient,
     ComfyAPIError,
     extract_output_files,
@@ -35,21 +35,21 @@ class TestComfyClient:
         assert client.base_url == "http://localhost:9000"
         assert client.timeout == 60
 
-    @patch('comfy_api.requests.get')
+    @patch('comfy_bridge.requests.get')
     def test_is_ready_success(self, mock_get):
         """Test is_ready returns True when server responds."""
         mock_get.return_value.status_code = 200
         client = ComfyClient()
         assert client.is_ready() is True
 
-    @patch('comfy_api.requests.get')
+    @patch('comfy_bridge.requests.get')
     def test_is_ready_failure(self, mock_get):
         """Test is_ready returns False when server doesn't respond."""
         mock_get.side_effect = Exception("Connection refused")
         client = ComfyClient()
         assert client.is_ready() is False
 
-    @patch('comfy_api.requests.post')
+    @patch('comfy_bridge.requests.post')
     def test_queue_prompt_success(self, mock_post):
         """Test successful prompt queuing."""
         mock_post.return_value.status_code = 200
@@ -62,7 +62,7 @@ class TestComfyClient:
         assert prompt_id == "abc123"
         mock_post.assert_called_once()
 
-    @patch('comfy_api.requests.post')
+    @patch('comfy_bridge.requests.post')
     def test_queue_prompt_no_prompt_id(self, mock_post):
         """Test queue_prompt raises error when no prompt_id returned."""
         mock_post.return_value.status_code = 200
@@ -73,7 +73,7 @@ class TestComfyClient:
         with pytest.raises(ComfyAPIError, match="No prompt_id"):
             client.queue_prompt({"test": "workflow"})
 
-    @patch('comfy_api.requests.get')
+    @patch('comfy_bridge.requests.get')
     def test_get_history_success(self, mock_get):
         """Test successful history retrieval."""
         expected = {"outputs": {"1": {"images": []}}}
@@ -86,7 +86,7 @@ class TestComfyClient:
 
         assert history == expected
 
-    @patch('comfy_api.requests.get')
+    @patch('comfy_bridge.requests.get')
     def test_get_history_not_found(self, mock_get):
         """Test history returns None when prompt not found."""
         mock_get.return_value.status_code = 200
