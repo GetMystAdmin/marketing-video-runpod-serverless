@@ -131,14 +131,6 @@ CMD ["python3", "-u", "/handler.py"]
 # =============================================================================
 FROM nodes AS full
 
-WORKDIR /
-
-# Copy handler code
-COPY src/handler.py /handler.py
-COPY src/comfy_bridge.py /opt/venv/lib/python3.11/site-packages/comfy_bridge.py
-COPY workflows/ /workflows/
-COPY src/extra_model_paths.yaml /extra_model_paths.yaml
-
 # Environment for baked models mode
 ENV COMFY_OUTPUT_DIR=/workspace/output \
     COMFY_INPUT_DIR=/workspace/input \
@@ -148,7 +140,7 @@ ENV COMFY_OUTPUT_DIR=/workspace/output \
 # Create necessary directories
 RUN mkdir -p /workspace/output /workspace/input
 
-# Download models directly (no separate stage, no copy = no duplication)
+# Download models first (these layers are ~60GB and rarely change)
 WORKDIR /workspace/models
 
 RUN mkdir -p checkpoints && \
@@ -180,10 +172,11 @@ RUN mkdir -p loras && \
 
 WORKDIR /
 
-# Re-copy handler code AFTER model downloads so code changes don't bust model cache
+# Copy handler code AFTER model downloads (code changes only rebuild from here)
 COPY src/handler.py /handler.py
 COPY src/comfy_bridge.py /opt/venv/lib/python3.11/site-packages/comfy_bridge.py
 COPY workflows/ /workflows/
+COPY src/extra_model_paths.yaml /extra_model_paths.yaml
 
 # Entry point
 CMD ["python3", "-u", "/handler.py"]
