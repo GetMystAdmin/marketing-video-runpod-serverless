@@ -139,11 +139,11 @@ RUN mkdir -p checkpoints && \
         -d checkpoints -o ltx-2-19b-dev.safetensors \
         "https://huggingface.co/Lightricks/ltx-2/resolve/main/ltx-2-19b-dev.safetensors"
 
-# Text Encoder (Gemma 3 12B)
+# Text Encoder (Gemma 3 12B via Comfy-Org - no auth required)
 RUN mkdir -p text_encoders && \
     aria2c -x 16 -s 16 --console-log-level=warn \
         -d text_encoders -o gemma_3_12B_it.safetensors \
-        "https://huggingface.co/google/gemma-3-12b-it/resolve/main/model.safetensors"
+        "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it.safetensors"
 
 # Spatial Upscaler
 RUN mkdir -p latent_upscale_models && \
