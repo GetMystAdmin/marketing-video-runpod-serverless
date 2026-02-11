@@ -127,55 +127,11 @@ RUN mkdir -p /workspace/ComfyUI/output /workspace/ComfyUI/input
 CMD ["python3", "-u", "/handler.py"]
 
 # =============================================================================
-# MODELS STAGE: Download models for baking
-# =============================================================================
-FROM nodes AS models
-
-WORKDIR /workspace/ComfyUI/models
-
-# LTX-2 Main Model (19B parameters)
-RUN mkdir -p checkpoints && \
-    aria2c -x 16 -s 16 --console-log-level=warn \
-        -d checkpoints -o ltx-2-19b-dev.safetensors \
-        "https://huggingface.co/Lightricks/ltx-2/resolve/main/ltx-2-19b-dev.safetensors"
-
-# Text Encoder (Gemma 3 12B via Comfy-Org - no auth required)
-RUN mkdir -p text_encoders && \
-    aria2c -x 16 -s 16 --console-log-level=warn \
-        -d text_encoders -o gemma_3_12B_it.safetensors \
-        "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it.safetensors"
-
-# Spatial Upscaler
-RUN mkdir -p latent_upscale_models && \
-    aria2c -x 16 -s 16 --console-log-level=warn \
-        -d latent_upscale_models -o ltx-2-spatial-upscaler-x2-1.0.safetensors \
-        "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-spatial-upscaler-x2-1.0.safetensors"
-
-# Temporal Upscaler
-RUN aria2c -x 16 -s 16 --console-log-level=warn \
-        -d latent_upscale_models -o ltx-2-temporal-upscaler-x2-1.0.safetensors \
-        "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-temporal-upscaler-x2-1.0.safetensors"
-
-# LoRAs directory
-RUN mkdir -p loras
-
-# Control LoRAs (Canny, Depth)
-RUN aria2c -x 16 -s 16 --console-log-level=warn \
-        -d loras -o ltx-2-19b-ic-lora-canny-control.safetensors \
-        "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Canny-Control/resolve/main/ltx-2-19b-ic-lora-canny-control.safetensors" && \
-    aria2c -x 16 -s 16 --console-log-level=warn \
-        -d loras -o ltx-2-19b-ic-lora-depth-control.safetensors \
-        "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Depth-Control/resolve/main/ltx-2-19b-ic-lora-depth-control.safetensors"
-
-# =============================================================================
-# FULL STAGE: Complete image with baked models
+# FULL STAGE: Complete image with baked models (downloaded in-place, no copy)
 # =============================================================================
 FROM nodes AS full
 
 WORKDIR /
-
-# Copy models from models stage
-COPY --from=models /workspace/ComfyUI/models /workspace/ComfyUI/models
 
 # Copy handler code
 COPY src/handler.py /handler.py
@@ -192,10 +148,37 @@ ENV COMFY_OUTPUT_DIR=/workspace/ComfyUI/output \
 # Create necessary directories
 RUN mkdir -p /workspace/ComfyUI/output /workspace/ComfyUI/input
 
+# Download models directly (no separate stage, no copy = no duplication)
+WORKDIR /workspace/ComfyUI/models
+
+RUN mkdir -p checkpoints && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d checkpoints -o ltx-2-19b-dev.safetensors \
+        "https://huggingface.co/Lightricks/ltx-2/resolve/main/ltx-2-19b-dev.safetensors"
+
+RUN mkdir -p text_encoders && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d text_encoders -o gemma_3_12B_it.safetensors \
+        "https://huggingface.co/Comfy-Org/ltx-2/resolve/main/split_files/text_encoders/gemma_3_12B_it.safetensors"
+
+RUN mkdir -p latent_upscale_models && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d latent_upscale_models -o ltx-2-spatial-upscaler-x2-1.0.safetensors \
+        "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-spatial-upscaler-x2-1.0.safetensors"
+
+RUN aria2c -x 16 -s 16 --console-log-level=warn \
+        -d latent_upscale_models -o ltx-2-temporal-upscaler-x2-1.0.safetensors \
+        "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-temporal-upscaler-x2-1.0.safetensors"
+
+RUN mkdir -p loras && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d loras -o ltx-2-19b-ic-lora-canny-control.safetensors \
+        "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Canny-Control/resolve/main/ltx-2-19b-ic-lora-canny-control.safetensors" && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d loras -o ltx-2-19b-ic-lora-depth-control.safetensors \
+        "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Depth-Control/resolve/main/ltx-2-19b-ic-lora-depth-control.safetensors"
+
+WORKDIR /
+
 # Entry point
 CMD ["python3", "-u", "/handler.py"]
-
-# =============================================================================
-# DEFAULT TARGET: Full image with models
-# =============================================================================
-FROM full
