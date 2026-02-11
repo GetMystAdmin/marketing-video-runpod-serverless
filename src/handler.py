@@ -47,9 +47,9 @@ COMFY_INPUT_DIR = os.getenv("COMFY_INPUT_DIR", "/workspace/input")
 WORKFLOW_DIR = os.getenv("WORKFLOW_DIR", "/workflows")
 STARTUP_TIMEOUT = int(os.getenv("STARTUP_TIMEOUT", "300"))
 
-# Workflow templates mapping
+# Workflow templates mapping (API format files)
 WORKFLOW_TEMPLATES = {
-    "t2v": "LTX2_T2V.json",
+    "t2v": "LTX-2_00041_.json",
     "i2v": "LTX2_I2V.json",
     "canny": "LTX2_canny_to_video.json",
     "depth": "LTX2_depth_to_video.json",
@@ -60,31 +60,31 @@ WORKFLOW_TEMPLATES = {
 # Format: {template: {simple_param: (node_id, node_input_name)}}
 TEMPLATE_PARAM_MAPPING = {
     "t2v": {
-        "width": ("43", "width"),
-        "height": ("43", "height"),
-        "frames": ("27", "int"),  # Frame count node
-        "prompt": ("6", "text"),  # Positive prompt
-        "negative_prompt": ("7", "text"),  # Negative prompt (if exists)
-        "seed": ("31", "seed"),  # Sampler seed
-        "steps": ("31", "steps"),  # Sampling steps
-        "cfg": ("31", "cfg"),  # CFG scale
+        "width": ("92:89", "width"),  # EmptyImage (target res, halved then upscaled)
+        "height": ("92:89", "height"),
+        "frames": ("92:62", "value"),  # PrimitiveInt frame count
+        "prompt": ("92:3", "text"),  # CLIPTextEncode positive
+        "negative_prompt": ("92:4", "text"),  # CLIPTextEncode negative
+        "seed": ("99", "seed"),  # Random Number
+        "steps": ("92:9", "steps"),  # LTXVScheduler
+        "cfg": ("92:47", "cfg"),  # CFGGuider
     },
     "i2v": {
-        "width": ("43", "width"),
-        "height": ("43", "height"),
-        "frames": ("27", "int"),
-        "prompt": ("6", "text"),
-        "seed": ("31", "seed"),
+        "width": ("92:89", "width"),
+        "height": ("92:89", "height"),
+        "frames": ("92:62", "value"),
+        "prompt": ("92:3", "text"),
+        "seed": ("99", "seed"),
     },
     "canny": {
-        "width": ("43", "width"),
-        "height": ("43", "height"),
-        "prompt": ("6", "text"),
+        "width": ("92:89", "width"),
+        "height": ("92:89", "height"),
+        "prompt": ("92:3", "text"),
     },
     "depth": {
-        "width": ("43", "width"),
-        "height": ("43", "height"),
-        "prompt": ("6", "text"),
+        "width": ("92:89", "width"),
+        "height": ("92:89", "height"),
+        "prompt": ("92:3", "text"),
     },
 }
 

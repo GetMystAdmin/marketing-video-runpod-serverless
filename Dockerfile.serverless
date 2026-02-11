@@ -164,6 +164,9 @@ RUN aria2c -x 16 -s 16 --console-log-level=warn \
 
 RUN mkdir -p loras && \
     aria2c -x 16 -s 16 --console-log-level=warn \
+        -d loras -o ltx-2-19b-distilled-lora-384.safetensors \
+        "https://huggingface.co/Lightricks/LTX-2/resolve/main/ltx-2-19b-distilled-lora-384.safetensors" && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
         -d loras -o ltx-2-19b-ic-lora-canny-control.safetensors \
         "https://huggingface.co/Lightricks/LTX-2-19b-IC-LoRA-Canny-Control/resolve/main/ltx-2-19b-ic-lora-canny-control.safetensors" && \
     aria2c -x 16 -s 16 --console-log-level=warn \
