@@ -1,0 +1,8 @@
+{
+  "input": {
+    "template": "t2v",
+    "prompt": "A fluffy orange cat playing a grand piano in a jazz club, cinematic lighting, 4K quality",
+    "resolution": "720p",
+    "timeout": 300
+  }
+}

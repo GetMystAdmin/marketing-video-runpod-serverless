@@ -1,0 +1,118 @@
+# Docker Compose for local serverless testing
+#
+# Usage:
+#   # Build and run
+#   docker-compose -f docker-compose.serverless.yml up --build
+#
+#   # Test with curl
+#   curl -X POST http://localhost:8000/runsync \
+#     -H "Content-Type: application/json" \
+#     -d @tests/fixtures/test_t2v_request.json
+#
+#   # Run in background
+#   docker-compose -f docker-compose.serverless.yml up -d
+
+services:
+  serverless-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.serverless
+      target: slim  # Use 'full' for baked models
+    image: comfyui-ltx2-serverless:local
+    container_name: comfyui-ltx2-serverless
+
+    # GPU access
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    ports:
+      - "8000:8000"   # RunPod API (for testing)
+      - "8188:8188"   # ComfyUI UI (for debugging)
+
+    volumes:
+      # Network volume simulation
+      - ./data/runpod-volume:/runpod-volume
+
+      # Output directory (for easy access to generated videos)
+      - ./data/output:/workspace/ComfyUI/output
+
+      # Input directory (for uploading test images)
+      - ./data/input:/workspace/ComfyUI/input
+
+      # Mount workflows for live editing during development
+      - ./workflows:/workflows:ro
+
+      # Mount source for development (comment out for production testing)
+      - ./src/handler.py:/handler.py:ro
+      - ./src/comfy_api.py:/opt/venv/lib/python3.11/site-packages/comfy_api.py:ro
+
+    environment:
+      # Enable local API serving for testing
+      - RUNPOD_DEBUG_LEVEL=DEBUG
+      - RUNPOD_WEBHOOK_GET_JOB=http://localhost:8000
+
+      # ComfyUI configuration
+      - COMFY_HOST=127.0.0.1
+      - COMFY_PORT=8188
+      - COMFY_OUTPUT_DIR=/workspace/ComfyUI/output
+      - COMFY_INPUT_DIR=/workspace/ComfyUI/input
+      - WORKFLOW_DIR=/workflows
+      - STARTUP_TIMEOUT=300
+
+      # Network volume path (for slim image)
+      - NETWORK_VOLUME=/runpod-volume
+
+      # Memory optimization
+      - LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libtcmalloc.so.4
+
+    # Override command for local API testing
+    command: ["python3", "-u", "/handler.py", "--rp_serve_api", "--rp_api_port", "8000"]
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+  # Optional: Model download service (for slim image)
+  model-downloader:
+    image: alpine:latest
+    container_name: model-downloader
+    profiles: ["download"]  # Only run with: docker-compose --profile download up
+    volumes:
+      - ./data/runpod-volume:/runpod-volume
+    command: |
+      sh -c "
+        apk add --no-cache aria2 curl && \
+        mkdir -p /runpod-volume/ComfyUI/models/checkpoints && \
+        mkdir -p /runpod-volume/ComfyUI/models/text_encoders && \
+        mkdir -p /runpod-volume/ComfyUI/models/loras && \
+        mkdir -p /runpod-volume/ComfyUI/models/latent_upscale_models && \
+        echo 'Downloading LTX-2 model...' && \
+        aria2c -x 16 -s 16 -d /runpod-volume/ComfyUI/models/checkpoints \
+          -o ltx-2-19b-dev.safetensors \
+          'https://huggingface.co/Lightricks/ltx-2/resolve/main/ltx-2-19b-dev.safetensors' && \
+        echo 'Models downloaded successfully!'
+      "
+
+# Volumes for persistent data
+volumes:
+  runpod-volume:
+    driver: local

@@ -1,0 +1,11 @@
+{
+  "input": {
+    "template": "t2v",
+    "prompt": "A serene Japanese garden with cherry blossoms falling, koi fish swimming in a pond",
+    "width": 1360,
+    "height": 768,
+    "frames": 97,
+    "seed": 42,
+    "timeout": 600
+  }
+}

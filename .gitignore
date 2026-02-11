@@ -1,2 +1,22 @@
 .history/
 .claude/
+
+# Local development data
+data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.coverage
+coverage.xml
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# Firebase
+firebase-debug.log

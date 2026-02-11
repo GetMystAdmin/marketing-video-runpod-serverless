@@ -1,0 +1,42 @@
+{
+  "input": {
+    "workflow": {
+      "6": {
+        "inputs": {
+          "text": "A beautiful sunset over the ocean, waves gently rolling, golden hour lighting",
+          "clip": ["30", 1]
+        },
+        "class_type": "CLIPTextEncode",
+        "_meta": {
+          "title": "CLIP Text Encode (Positive Prompt)"
+        }
+      },
+      "8": {
+        "inputs": {
+          "samples": ["31", 0],
+          "vae": ["30", 2]
+        },
+        "class_type": "VAEDecode",
+        "_meta": {
+          "title": "VAE Decode"
+        }
+      },
+      "9": {
+        "inputs": {
+          "filename_prefix": "ComfyUI",
+          "images": ["8", 0]
+        },
+        "class_type": "SaveImage",
+        "_meta": {
+          "title": "Save Image"
+        }
+      }
+    },
+    "params": {
+      "6": {
+        "text": "Override: A majestic mountain landscape at dawn"
+      }
+    },
+    "timeout": 600
+  }
+}

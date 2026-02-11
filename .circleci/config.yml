@@ -10,6 +10,7 @@ executors:
       COMPOSE_DOCKER_CLI_BUILD: 1
 
 jobs:
+  # Original Pod build
   build_and_push:
     executor: docker-dind
     steps:
@@ -24,15 +25,86 @@ jobs:
           command: |
             TAG="${CIRCLE_TAG:-latest}"
             IMG="docker.io/$DOCKERHUB_USER/comfyui-ltx-template"
-            
+
             docker build \
               --progress=plain \
               -t "${IMG}:${TAG}" .
-            
+
             docker push "${IMG}:${TAG}"
+
+  # Serverless build (slim - uses network volume)
+  build_serverless_slim:
+    executor: docker-dind
+    steps:
+      - checkout
+      - run:
+          name: Log in to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PAT" | docker login -u "$DOCKERHUB_USER" --password-stdin
+
+      - run:
+          name: Build & push serverless slim image
+          command: |
+            TAG="${CIRCLE_TAG:-latest}"
+            IMG="docker.io/$DOCKERHUB_USER/comfyui-ltx2-serverless"
+
+            docker build \
+              --progress=plain \
+              --target slim \
+              -f Dockerfile.serverless \
+              -t "${IMG}:${TAG}-slim" .
+
+            docker push "${IMG}:${TAG}-slim"
+
+  # Serverless build (full - models baked in)
+  build_serverless_full:
+    executor: docker-dind
+    resource_class: xlarge  # Need more resources for large model downloads
+    steps:
+      - checkout
+      - run:
+          name: Log in to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PAT" | docker login -u "$DOCKERHUB_USER" --password-stdin
+
+      - run:
+          name: Build & push serverless full image
+          no_output_timeout: 60m  # Model downloads can take a while
+          command: |
+            TAG="${CIRCLE_TAG:-latest}"
+            IMG="docker.io/$DOCKERHUB_USER/comfyui-ltx2-serverless"
+
+            docker build \
+              --progress=plain \
+              --target full \
+              -f Dockerfile.serverless \
+              -t "${IMG}:${TAG}" .
+
+            docker push "${IMG}:${TAG}"
+
+  # Test handler (unit tests)
+  test_handler:
+    docker:
+      - image: python:3.11-slim
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            pip install pytest pytest-cov requests runpod
+      - run:
+          name: Run tests
+          command: |
+            pytest tests/ -v --cov=src --cov-report=xml
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: coverage.xml
 
 workflows:
   version: 2
+
+  # Pod build (existing workflow)
   build_on_tag:
     jobs:
       - build_and_push:
@@ -42,3 +114,44 @@ workflows:
               only: /^v[0-9]+(\.[0-9]+)*$/  # run on tags like v5 or v1.2.3
             branches:
               ignore: /.*/
+
+  # Serverless builds
+  build_serverless_on_tag:
+    jobs:
+      - test_handler:
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*-serverless$/
+            branches:
+              ignore: /.*/
+
+      - build_serverless_slim:
+          context: docker-hub
+          requires:
+            - test_handler
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*-serverless$/
+            branches:
+              ignore: /.*/
+
+      - build_serverless_full:
+          context: docker-hub
+          requires:
+            - test_handler
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*-serverless$/
+            branches:
+              ignore: /.*/
+
+  # Run tests on PRs and main branch
+  test_on_commit:
+    jobs:
+      - test_handler:
+          filters:
+            branches:
+              only:
+                - main
+                - /feature\/.*/
+                - /fix\/.*/

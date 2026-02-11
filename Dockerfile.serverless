@@ -1,0 +1,201 @@
+# RunPod Serverless Dockerfile for ComfyUI LTX-2
+#
+# This Dockerfile creates a serverless worker image optimized for
+# on-demand video generation using LTX-2 models.
+#
+# Build variants:
+#   - Full (default): All models baked in (~50GB)
+#   - Slim: Uses network volume for models (~5GB)
+#
+# Usage:
+#   docker build -f Dockerfile.serverless -t comfyui-ltx2-serverless .
+#   docker build -f Dockerfile.serverless --target slim -t comfyui-ltx2-serverless-slim .
+
+# =============================================================================
+# BASE STAGE: Core dependencies and ComfyUI
+# =============================================================================
+FROM nvidia/cuda:12.8.1-cudnn-runtime-ubuntu24.04 AS base
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_PREFER_BINARY=1 \
+    PYTHONUNBUFFERED=1 \
+    CMAKE_BUILD_PARALLEL_LEVEL=8
+
+# System dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        python3.11 python3.11-venv python3.11-dev \
+        python3-pip \
+        curl ffmpeg git aria2 git-lfs wget \
+        libgl1 libglib2.0-0 libgoogle-perftools-dev && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python && \
+    ln -sf /usr/bin/python3.11 /usr/bin/python3 && \
+    python3.11 -m venv /opt/venv && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Use virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
+
+# PyTorch with CUDA 12.8
+RUN pip install --no-cache-dir --pre torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/nightly/cu128
+
+# Core Python packages
+RUN pip install --no-cache-dir \
+    packaging setuptools wheel \
+    pyyaml requests aiohttp \
+    runpod \
+    comfy-cli
+
+# Install ComfyUI
+RUN yes | comfy --workspace /workspace install
+
+# =============================================================================
+# NODES STAGE: Install custom nodes
+# =============================================================================
+FROM base AS nodes
+
+WORKDIR /workspace/ComfyUI/custom_nodes
+
+# Install custom nodes required for LTX-2 workflows
+RUN pip install --no-cache-dir opencv-python && \
+    for repo in \
+        https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git \
+        https://github.com/kijai/ComfyUI-KJNodes.git \
+        https://github.com/rgthree/rgthree-comfy.git \
+        https://github.com/JPS-GER/ComfyUI_JPS-Nodes.git \
+        https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git \
+        https://github.com/Jordach/comfy-plasma.git \
+        https://github.com/ltdrdata/ComfyUI-Impact-Pack.git \
+        https://github.com/ClownsharkBatwing/RES4LYF.git \
+        https://github.com/yolain/ComfyUI-Easy-Use.git \
+        https://github.com/WASasquatch/was-node-suite-comfyui.git \
+        https://github.com/theUpsider/ComfyUI-Logic.git \
+        https://github.com/cubiq/ComfyUI_essentials.git \
+        https://github.com/chrisgoringe/cg-image-picker.git \
+        https://github.com/chflame163/ComfyUI_LayerStyle.git \
+        https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git \
+        https://github.com/Jonseed/ComfyUI-Detail-Daemon.git \
+        https://github.com/shadowcz007/comfyui-mixlab-nodes.git \
+        https://github.com/chflame163/ComfyUI_LayerStyle_Advance.git \
+        https://github.com/bash-j/mikey_nodes.git \
+        https://github.com/chrisgoringe/cg-use-everywhere.git \
+        https://github.com/M1kep/ComfyLiterals.git \
+        https://github.com/Lightricks/ComfyUI-LTXVideo.git; \
+    do \
+        repo_dir=$(basename "$repo" .git); \
+        if [ "$repo" = "https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git" ]; then \
+            git clone --depth 1 --recursive "$repo"; \
+        else \
+            git clone --depth 1 "$repo"; \
+        fi; \
+        if [ -f "$repo_dir/requirements.txt" ]; then \
+            pip install --no-cache-dir -r "$repo_dir/requirements.txt" || true; \
+        fi; \
+        if [ -f "$repo_dir/install.py" ]; then \
+            python "$repo_dir/install.py" || true; \
+        fi; \
+    done
+
+# =============================================================================
+# SLIM STAGE: No models baked (uses network volume)
+# =============================================================================
+FROM nodes AS slim
+
+WORKDIR /
+
+# Copy handler code
+COPY src/handler.py /handler.py
+COPY src/comfy_api.py /opt/venv/lib/python3.11/site-packages/comfy_api.py
+COPY workflows/ /workflows/
+COPY src/extra_model_paths.yaml /extra_model_paths.yaml
+
+# Environment for network volume mode
+ENV NETWORK_VOLUME=/runpod-volume \
+    COMFY_OUTPUT_DIR=/runpod-volume/ComfyUI/output \
+    COMFY_INPUT_DIR=/runpod-volume/ComfyUI/input \
+    EXTRA_MODEL_PATHS=/extra_model_paths.yaml
+
+# Create necessary directories
+RUN mkdir -p /workspace/ComfyUI/output /workspace/ComfyUI/input
+
+# Entry point
+CMD ["python3", "-u", "/handler.py"]
+
+# =============================================================================
+# MODELS STAGE: Download models for baking
+# =============================================================================
+FROM nodes AS models
+
+WORKDIR /workspace/ComfyUI/models
+
+# LTX-2 Main Model (19B parameters)
+RUN mkdir -p checkpoints && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d checkpoints -o ltx-2-19b-dev.safetensors \
+        "https://huggingface.co/Lightricks/ltx-2/resolve/main/ltx-2-19b-dev.safetensors"
+
+# Text Encoder (Gemma 3 12B)
+RUN mkdir -p text_encoders && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d text_encoders -o gemma_3_12B_it.safetensors \
+        "https://huggingface.co/google/gemma-3-12b-it/resolve/main/model.safetensors"
+
+# Spatial Upscaler
+RUN mkdir -p latent_upscale_models && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d latent_upscale_models -o ltxv_spatial_upscaler_1_0_bf16.safetensors \
+        "https://huggingface.co/Lightricks/LTX-Video/resolve/main/ltxv_spatial_upscaler_1.0_bf16.safetensors"
+
+# Temporal Upscaler
+RUN aria2c -x 16 -s 16 --console-log-level=warn \
+        -d latent_upscale_models -o ltxv_temporal_upscaler_1_0_bf16.safetensors \
+        "https://huggingface.co/Lightricks/LTX-Video/resolve/main/ltxv_temporal_upscaler_1.0_bf16.safetensors"
+
+# LoRAs directory
+RUN mkdir -p loras
+
+# Control LoRAs (Canny, Depth)
+RUN aria2c -x 16 -s 16 --console-log-level=warn \
+        -d loras -o ltxv_canny_lora_1_0_bf16.safetensors \
+        "https://huggingface.co/Lightricks/LTX-Video/resolve/main/ltxv_canny_lora_1.0_bf16.safetensors" && \
+    aria2c -x 16 -s 16 --console-log-level=warn \
+        -d loras -o ltxv_depth_lora_1_0_bf16.safetensors \
+        "https://huggingface.co/Lightricks/LTX-Video/resolve/main/ltxv_depth_lora_1.0_bf16.safetensors"
+
+# =============================================================================
+# FULL STAGE: Complete image with baked models
+# =============================================================================
+FROM nodes AS full
+
+WORKDIR /
+
+# Copy models from models stage
+COPY --from=models /workspace/ComfyUI/models /workspace/ComfyUI/models
+
+# Copy handler code
+COPY src/handler.py /handler.py
+COPY src/comfy_api.py /opt/venv/lib/python3.11/site-packages/comfy_api.py
+COPY workflows/ /workflows/
+COPY src/extra_model_paths.yaml /extra_model_paths.yaml
+
+# Environment for baked models mode
+ENV COMFY_OUTPUT_DIR=/workspace/ComfyUI/output \
+    COMFY_INPUT_DIR=/workspace/ComfyUI/input \
+    EXTRA_MODEL_PATHS=/extra_model_paths.yaml \
+    LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libtcmalloc.so.4
+
+# Create necessary directories
+RUN mkdir -p /workspace/ComfyUI/output /workspace/ComfyUI/input
+
+# Entry point
+CMD ["python3", "-u", "/handler.py"]
+
+# =============================================================================
+# DEFAULT TARGET: Full image with models
+# =============================================================================
+FROM full
