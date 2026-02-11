@@ -180,5 +180,10 @@ RUN mkdir -p loras && \
 
 WORKDIR /
 
+# Re-copy handler code AFTER model downloads so code changes don't bust model cache
+COPY src/handler.py /handler.py
+COPY src/comfy_bridge.py /opt/venv/lib/python3.11/site-packages/comfy_bridge.py
+COPY workflows/ /workflows/
+
 # Entry point
 CMD ["python3", "-u", "/handler.py"]

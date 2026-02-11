@@ -242,9 +242,25 @@ def extract_output_files(history: dict[str, Any]) -> list[dict[str, str]]:
 
 
 def load_workflow(path: str | Path) -> dict[str, Any]:
-    """Load a workflow from a JSON file."""
+    """
+    Load a workflow from a JSON file.
+
+    Handles both API format (node IDs as keys) and LiteGraph UI format
+    (has 'nodes' array). If UI format, extracts the API format from
+    extra.prompt.
+    """
     with open(path, "r") as f:
-        return json.load(f)
+        data = json.load(f)
+
+    # If it's LiteGraph UI format, extract the API format
+    if "nodes" in data and "links" in data:
+        api_workflow = data.get("extra", {}).get("prompt")
+        if api_workflow:
+            logger.info("Converted LiteGraph UI format to API format")
+            return api_workflow
+        raise ValueError(f"Workflow is in UI format but has no embedded API prompt: {path}")
+
+    return data
 
 
 def inject_params(workflow: dict[str, Any], params: dict[str, dict]) -> dict[str, Any]:
