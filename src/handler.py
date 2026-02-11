@@ -138,12 +138,12 @@ def start_comfyui() -> bool:
     if extra_paths and os.path.exists(extra_paths):
         comfy_cmd.extend(["--extra-model-paths-config", extra_paths])
 
-    # Start ComfyUI process
+    # Start ComfyUI process (log to stdout so RunPod captures it)
     logger.info(f"Running: {' '.join(comfy_cmd)}")
     subprocess.Popen(
         comfy_cmd,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
         start_new_session=True
     )
 
