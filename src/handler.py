@@ -65,7 +65,7 @@ TEMPLATE_PARAM_MAPPING = {
         "frames": ("92:62", "value"),  # PrimitiveInt frame count
         "prompt": ("92:3", "text"),  # CLIPTextEncode positive
         "negative_prompt": ("92:4", "text"),  # CLIPTextEncode negative
-        "seed": ("99", "seed"),  # Random Number
+        "seed": ("92:11", "noise_seed"),  # RandomNoise
         "steps": ("92:9", "steps"),  # LTXVScheduler
         "cfg": ("92:47", "cfg"),  # CFGGuider
     },
@@ -74,7 +74,7 @@ TEMPLATE_PARAM_MAPPING = {
         "height": ("92:89", "height"),
         "frames": ("92:62", "value"),
         "prompt": ("92:3", "text"),
-        "seed": ("99", "seed"),
+        "seed": ("92:11", "noise_seed"),
     },
     "canny": {
         "width": ("92:89", "width"),

@@ -14,18 +14,6 @@
       "title": "Save Video"
     }
   },
-  "99": {
-    "inputs": {
-      "number_type": "integer",
-      "minimum": 0,
-      "maximum": 1337,
-      "seed": 134181001662285
-    },
-    "class_type": "Random Number",
-    "_meta": {
-      "title": "Random Number"
-    }
-  },
   "92:9": {
     "inputs": {
       "steps": 20,
@@ -279,10 +267,7 @@
   },
   "92:11": {
     "inputs": {
-      "noise_seed": [
-        "99",
-        2
-      ]
+      "noise_seed": 42
     },
     "class_type": "RandomNoise",
     "_meta": {
